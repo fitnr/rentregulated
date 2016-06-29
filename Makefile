@@ -58,15 +58,18 @@ COUNTIES = BRONX KINGS QUEENS NEWYORK RICHMOND \
 	# DUTCHESS MONROE RENSSELAER SCHENECTADY SUFFOLK
 
 csv = $(addsuffix .csv,$(COUNTIES))
-zipcodefiles = $(foreach b,$(COUNTIES),$(foreach z,$($b),$b-$z.csv))
+zipcodefiles = $(foreach b,$(COUNTIES),$(foreach z,$($b),$b/$z.csv))
 
-buildings.csv: $(csv)
+rentregulatedbuildings.csv: $(csv)
 	echo buildingregistrationnumber,lastregistrationyear,address,county,status,addtionaladdresses > $@
-	cat $^ | sed 's/[Additional Addresses]/1/g' >> $@
+	cat $^ >> $@
 
 .SECONDEXPANSION:
-$(csv): %.csv: $$(foreach z,$$($$*),$$*-$$z.csv)
-	cat $^ | grep -v 'Displaying Buildings ' > $@
+$(csv): %.csv: $$(foreach z,$$($$*),$$*/$$z.csv)
+	grep --no-filename -v 'Displaying Buildings ' $^ | \
+		sed 's/\[Additional Addresses\]/1/g' > $@
 
-$(zipcodefiles): %.csv:
-	python3.5 scrape.py $(subst -, ,$*) > $@
+$(zipcodefiles): %.csv: | $$(@D)
+	python3.5 scrape.py $(subst -, ,$(*D)) $(*F) > $@
+
+$(COUNTIES):; mkdir -p $@
