@@ -26,6 +26,11 @@ The vast majority of properties are in the five boroughs, most of the rest are a
     * [421-A](http://www1.nyc.gov/site/hpd/developers/tax-incentives-421a.page)
     * [ARTICLE 11 OF PHFL](https://apps.hcr.ny.gov/buildingsearch/popup.aspx#Article11)
     * [ARTICLES 14 & 15 OF PHFL](https://apps.hcr.ny.gov/buildingsearch/popup.aspx#Article14and15)
-    * Section 608
+    * [SEC 608 OF PHFL](https://apps.hcr.ny.gov/buildingsearch/popup.aspx#Section608)
     * [Not Indicated by Owner](https://apps.hcr.ny.gov/buildingsearch/popup.aspx#NotIndicated)
     * RENT CONTROLLED APTS MAY EXIST
+    * COLD WATER TENEMENT
+    * [LIHTC](https://www.huduser.gov/portal/datasets/lihtc.html) (Low Income Housing Tax Credit)
+    * BANK LOAN
+    * IN RECEIVERSHIP
+    * various notes about building type and size, e.g. "3 FAMILY BROWNSTONE", "12 FAMILY UNIT"
