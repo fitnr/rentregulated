@@ -66,7 +66,7 @@ rentregulatedbuildings.csv: $(csv)
 
 .SECONDEXPANSION:
 $(csv): %.csv: $$(foreach z,$$($$*),$$*/$$z.csv)
-	grep --no-filename -v 'Displaying Buildings ' $^ | \
+	grep --no-filename -v 'Displaying buildings' $^ | \
 		sed 's/\[Additional Addresses\]/1/g' > $@
 
 $(zipcodefiles): %.csv: | $$(@D)
