@@ -2,12 +2,13 @@
 import sys
 import csv
 import re
+import argparse
 import random
 import time
 import requests
 from bs4 import BeautifulSoup
 
-LIB = 'lxml'
+LIB = 'html.parser'
 ENDPOINT = 'https://apps.hcr.ny.gov/buildingsearch/'
 AJAX_HEAD = {
     'X-MicrosoftAjax': 'Delta=true',
@@ -99,7 +100,7 @@ def prepare(session):
     return BeautifulSoup(r.text, LIB)
 
 
-def main(county, zipcode):
+def firstpage(session, county, zipcode):
     basic = {
         'ctl00$ContentPlaceHolder1$countyListDropDown': county,
         'ctl00$ContentPlaceHolder1$zipCodesDropDown': zipcode,
@@ -118,6 +119,49 @@ def main(county, zipcode):
     zip_params = {
         'ctl00$ContentPlaceHolder1$submitZipCodeButton': 'Submit',
     }
+
+    zip_params.update(basic)
+
+    print('starting', zipcode, file=sys.stderr)
+    soup = prepare(session)
+
+    # select county from dropdown list
+    county_params.update(dumb_params(soup))
+    print('selecting county:', county, file=sys.stderr)
+    request = session.post(ENDPOINT, data=county_params, headers=AJAX_HEAD)
+
+    sleep()
+
+    # decode parameters out of nasty nonsense
+    # easiest way is to make another soup object
+    soup = construct_soup(request.text)
+
+    print('getting initial results', file=sys.stderr)
+    zip_params.update(dumb_params(soup))
+    request = session.post(ENDPOINT, data=zip_params)
+
+    # Sometimes page errs, sets of a chain of redirects that end nowhere interesting.
+    if len(request.history) > 1:
+        # import pdb; pdb.set_trace()
+        raise RuntimeError("too many histories in " + str(zipcode))
+
+    return request.text
+
+
+def count(session, county, zipcode):
+    text = firstpage(session, county, zipcode)
+
+    if re.search('0 results found', text):
+        buildings = 0
+
+    else:
+        match = re.search(r'Displaying buildings \d+ - \d+ of (\d+)', text)
+        buildings = match.groups()[0]
+
+    print(zipcode, buildings)
+
+
+def scrape(session, county, zipcode):
     next_params = {
         "ctl00$ContentPlaceHolder1$ScriptManager1": (
             "ctl00$ContentPlaceHolder1$gridUpdatePanel|"
@@ -125,72 +169,64 @@ def main(county, zipcode):
         ),
         'ctl00$ContentPlaceHolder1$buildingsGridView$ctl54$btnNext': "Next",
         '__ASYNCPOST': 'true',
+        'ctl00$ContentPlaceHolder1$countyListDropDown': county,
+        'ctl00$ContentPlaceHolder1$zipCodesDropDown': zipcode,
+        '__EVENTTARGET': '',
     }
 
-    zip_params.update(basic)
-    next_params.update(basic)
+    # get first page of results
+    text = firstpage(session, county, zipcode)
 
-    with requests.Session() as session:
-        print('starting', zipcode, file=sys.stderr)
-        soup = prepare(session)
+    match = re.search(r'Displaying buildings \d+ - \d+ of (\d+)', text)
+    print(match.groups()[0], 'buildings found in', zipcode, file=sys.stderr)
 
-        # select county from dropdown list
-        county_params.update(dumb_params(soup))
-        print('selecting county:', county, file=sys.stderr)
-        request = session.post(ENDPOINT, data=county_params, headers=AJAX_HEAD)
+    soup = BeautifulSoup(text, LIB)
 
-        sleep()
+    writer = csv.writer(sys.stdout, lineterminator='\n')
+    writerows(writer, soup)
 
-        # decode parameters out of nasty nonsense
-        # easiest way is to make another soup object
+    sleep()
+
+    # get further results for zip code
+    next_button = re.search(r'value="Next"', text)
+
+    while next_button:
+        next_params.update(dumb_params(soup))
+
+        request = session.post(ENDPOINT, data=next_params, headers=AJAX_HEAD)
         soup = construct_soup(request.text)
 
-        print('getting initial results', file=sys.stderr)
-        zip_params.update(dumb_params(soup))
-        request = session.post(ENDPOINT, data=zip_params)
+        try:
+            writerows(writer, soup)
 
-        # Sometimes page errs, sets of a chain of redirects that end nowhere interesting.
-        if len(request.history) > 1:
+        except RuntimeError:
+            print("Missing table in results for", zipcode, file=sys.stderr)
+
+        except AttributeError as e:
+            raise e
             # import pdb; pdb.set_trace()
-            raise RuntimeError("too many histories in " + str(zipcode))
 
-        if re.search('0 results found', request.text):
-            print('0 buildings found in', zipcode, file=sys.stderr)
-            return
-
-        match = re.search(r'Displaying buildings \d+ - \d+ of (\d+)', request.text)
-        print(match.groups()[0], 'buildings found in', zipcode, file=sys.stderr)
-
-        soup = BeautifulSoup(request.text, LIB)
-
-        writer = csv.writer(sys.stdout, lineterminator='\n')
-        writerows(writer, soup)
+        next_button = re.search(r'value="Next"', request.text)
 
         sleep()
 
-        # get further results for zip code
-        next_button = re.search(r'value="Next"', request.text)
-        while next_button:
-            next_params.update(dumb_params(soup))
 
-            request = session.post(ENDPOINT, data=next_params, headers=AJAX_HEAD)
-            soup = construct_soup(request.text)
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('county', type=str)
+    parser.add_argument('zipcode', type=str)
+    parser.add_argument('--action', default='scrape')
 
-            try:
-                writerows(writer, soup)
+    args = parser.parse_args()
 
-            except RuntimeError:
-                print("Missing table in results for", zipcode, file=sys.stderr)
+    county = args.county.replace('NEWYORK', 'NEW YORK')
 
-            except AttributeError as e:
-                raise e
-                # import pdb; pdb.set_trace()
+    with requests.Session() as session:
+        if args.action == 'scrape':
+            scrape(session, county, args.zipcode)
 
-            next_button = re.search(r'value="Next"', request.text)
-
-            sleep()
+        elif args.action == 'count':
+            count(session, county, args.zipcode)
 
 if __name__ == '__main__':
-    c = sys.argv[1].replace('NEWYORK', 'NEW YORK')
-    z = sys.argv[2]
-    main(c, z)
+    main()

@@ -72,4 +72,10 @@ $(csv): %.csv: $$(foreach z,$$($$*),$$*/$$z.csv)
 $(zipcodefiles): %.csv: | $$(@D)
 	python3.5 scrape.py $(subst -, ,$(*D)) $(*F) > $@
 
+counts.csv:
+	@rm -rf $@
+	for f in $(basename $(zipcodefiles)); do \
+		python3.5 scrape.py --action count $${f/\// } >> $@; \
+	done;
+
 $(COUNTIES):; mkdir -p $@
