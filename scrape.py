@@ -22,13 +22,7 @@ def sleep():
 
 def dumb_params(soup):
     fields = '__VIEWSTATE', '__EVENTVALIDATION', '__VIEWSTATEGENERATOR', '__VIEWSTATEENCRYPTED'
-
-    try:
-        params = {f: soup.find(attrs={'name': f}).attrs['value'] for f in fields}
-
-    except AttributeError as err:
-        # import pdb; pdb.set_trace()
-        raise err
+    params = {f: soup.find(attrs={'name': f}).attrs['value'] for f in fields}
 
     params['__EVENTARGUMENT'] = ''
     params['__LASTFOCUS'] = ''
@@ -142,7 +136,7 @@ def firstpage(session, county, zipcode):
 
     # Sometimes page errs, sets of a chain of redirects that end nowhere interesting.
     if len(request.history) > 1:
-        # import pdb; pdb.set_trace()
+
         raise RuntimeError("too many histories in " + str(zipcode))
 
     return request.text
@@ -158,7 +152,7 @@ def count(session, county, zipcode):
         match = re.search(r'Displaying buildings \d+ - \d+ of (\d+)', text)
         buildings = match.groups()[0]
 
-    print(zipcode, buildings)
+    print(county, zipcode, buildings)
 
 
 def scrape(session, county, zipcode):
@@ -200,19 +194,16 @@ def scrape(session, county, zipcode):
         request = session.post(ENDPOINT, data=next_params, headers=AJAX_HEAD)
         soup = construct_soup(request.text)
 
+        sleep()
+
         try:
             writerows(writer, soup)
 
         except RuntimeError:
-            print("Missing table in results for", zipcode, file=sys.stderr)
-
-        except AttributeError as e:
-            raise e
-            # import pdb; pdb.set_trace()
+            print("MISSING TABLE IN RESULTS:", zipcode, file=sys.stderr)
+            return
 
         next_button = re.search(r'value="Next"', request.text)
-
-        sleep()
 
 
 def main():
