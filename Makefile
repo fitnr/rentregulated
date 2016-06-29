@@ -46,7 +46,7 @@ ALBANY = 12054 12200 12202 12204 12205 12206 12207 12208 12209 12210 12211 12223
 
 ERIE = 14201 14206 14209 14211 14213 14214 14215 14216 14217 14220 14222 14225
 
-# These counties appear in the database search function, but a manual search shows 0 properties
+# These counties appear on the database search page, but a manual search shows 0 properties
 # DUTCHESS = 12601
 # MONROE = 14445
 # RENSSELAER = 12180
