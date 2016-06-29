@@ -177,6 +177,10 @@ def scrape(session, county, zipcode):
     # get first page of results
     text = firstpage(session, county, zipcode)
 
+    if re.search('0 results found', text):
+        print('0 buildings found in', zipcode, file=sys.stderr)
+        return
+
     match = re.search(r'Displaying buildings \d+ - \d+ of (\d+)', text)
     print(match.groups()[0], 'buildings found in', zipcode, file=sys.stderr)
 
