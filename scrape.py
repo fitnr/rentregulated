@@ -20,6 +20,11 @@ AJAX_HEAD = {
     'X-Requested-With': 'XMLHttpRequest'
 }
 
+
+def sleep():
+    time.sleep(random.uniform(0.0, 0.1))
+
+
 def dumb_params(soup):
     try:
         return {
@@ -97,7 +102,7 @@ def prepare(sesh):
     sesh.headers.update({
         'Cookie': 'ASP.NET_SessionId=' + sesh.cookies['ASP.NET_SessionId']
     })
-    time.sleep(random.uniform(0.02, 0.03))
+    sleep()
 
     # poke zip code button
     param = dumb_params(soup)
@@ -105,7 +110,7 @@ def prepare(sesh):
         '__EVENTTARGET': 'ctl00$ContentPlaceHolder1$zipCodeSearchLinkButton',
         'ctl00$ContentPlaceHolder1$countyDropDown': '',
     })
-    time.sleep(random.uniform(0.02, 0.03))
+    sleep()
 
     r = sesh.post(ENDPOINT, data=param)
     return BeautifulSoup(r.text, LIB)
@@ -136,7 +141,7 @@ def main(county, zipcode):
         params.update(dumb_params(soup))
         print('selecting county:', county, file=sys.stderr)
         breq = sesh.post(ENDPOINT, data=params, headers=AJAX_HEAD)
-        time.sleep(random.uniform(0.02, 0.03))
+        sleep()
 
         # decode parameters out of nasty nonsense
         # easiest way is to make another soup object
@@ -194,7 +199,7 @@ def main(county, zipcode):
 
             next_button = re.search(r'value="Next"', req.text)
 
-            time.sleep(random.uniform(0.02, 0.03))
+            sleep()
 
 if __name__ == '__main__':
     c, z = sys.argv[1], sys.argv[2]
