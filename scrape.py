@@ -193,11 +193,17 @@ def scrape(session, county, zipcode):
         request = session.post(ENDPOINT, data=next_params, headers=AJAX_HEAD)
         soup = construct_soup(request.text)
 
-        sleep()
+        try:
+            writerows(writer, soup)
 
-        writerows(writer, soup)
+        except RuntimeError:
+            # Redo the request and try again (once)
+            request = session.post(ENDPOINT, data=next_params, headers=AJAX_HEAD)
+            soup = construct_soup(request.text)
+            writerows(writer, soup)
 
         next_button = re.search(r'value="Next"', request.text)
+        sleep()
 
 
 def main():
