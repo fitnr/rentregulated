@@ -51,7 +51,7 @@ def writerows(writer, soup):
     table = soup.find('table', attrs={'class': 'grid'})
 
     if table is None:
-        raise RuntimeError("Missing table")
+        raise RuntimeError('Missing table')
 
     for tr in table.find_all('tr'):
         if tr.td is None or tr.td.attrs.get('colspan') == 7:
@@ -136,7 +136,6 @@ def firstpage(session, county, zipcode):
 
     # Sometimes page errs, sets of a chain of redirects that end nowhere interesting.
     if len(request.history) > 1:
-
         raise RuntimeError("too many histories in " + str(zipcode))
 
     return request.text
@@ -196,12 +195,7 @@ def scrape(session, county, zipcode):
 
         sleep()
 
-        try:
-            writerows(writer, soup)
-
-        except RuntimeError:
-            print("MISSING TABLE IN RESULTS: {}/{}".format(county, zipcode), file=sys.stderr)
-            return
+        writerows(writer, soup)
 
         next_button = re.search(r'value="Next"', request.text)
 
