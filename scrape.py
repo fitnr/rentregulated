@@ -17,7 +17,7 @@ AJAX_HEAD = {
 
 
 def sleep():
-    time.sleep(random.uniform(0.0, 0.1))
+    time.sleep(random.uniform(0.1, 1.0))
 
 
 def dumb_params(soup):
