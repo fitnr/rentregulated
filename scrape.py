@@ -95,6 +95,11 @@ def prepare(session):
     sleep()
 
     r = session.post(ENDPOINT, data=param)
+
+    if len(r.history) > 1:
+        print('history too long (1)', file=sys.stderr)
+        r = session.post(ENDPOINT, data=param)
+
     return BeautifulSoup(r.text, LIB)
 
 
@@ -129,6 +134,10 @@ def firstpage(session, county, zipcode):
     print('selecting county:', county, file=sys.stderr)
     request = session.post(ENDPOINT, data=county_params, headers=AJAX_HEAD)
 
+    if len(request.history) > 1:
+        print('history too long (2)', file=sys.stderr)
+        request = session.post(ENDPOINT, data=county_params, headers=AJAX_HEAD)
+
     # decode parameters out of nasty nonsense
     # easiest way is to make another soup object
     soup = construct_soup(request.text)
@@ -139,7 +148,8 @@ def firstpage(session, county, zipcode):
 
     # Sometimes page errs, sets of a chain of redirects that end nowhere interesting.
     if len(request.history) > 1:
-        raise RuntimeError("too many histories in " + str(zipcode))
+        print('history too long (3)', file=sys.stderr)
+        request = session.post(ENDPOINT, data=zip_params)
 
     return request.text
 
