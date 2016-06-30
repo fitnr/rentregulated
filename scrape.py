@@ -152,7 +152,7 @@ def count(session, county, zipcode):
         match = re.search(r'Displaying buildings \d+ - \d+ of (\d+)', text)
         buildings = match.groups()[0]
 
-    print(county, zipcode, buildings)
+    print('{},{},{}'.format(county, zipcode, buildings))
 
 
 def scrape(session, county, zipcode):
@@ -200,7 +200,7 @@ def scrape(session, county, zipcode):
             writerows(writer, soup)
 
         except RuntimeError:
-            print("MISSING TABLE IN RESULTS:", zipcode, file=sys.stderr)
+            print("MISSING TABLE IN RESULTS: {}/{}".format(county, zipcode), file=sys.stderr)
             return
 
         next_button = re.search(r'value="Next"', request.text)

@@ -61,7 +61,7 @@ csv = $(addsuffix .csv,$(COUNTIES))
 zipcodefiles = $(foreach b,$(COUNTIES),$(foreach z,$($b),$b/$z.csv))
 
 rentregulatedbuildings.csv: $(csv)
-	echo buildingregistrationnumber,lastregistrationyear,address,county,status,addtionaladdresses > $@
+	echo buildingregistrationnumber,lastregistrationyear,address,zipcode,county,status,addtionaladdresses > $@
 	cat $^ >> $@
 
 .SECONDEXPANSION:
@@ -73,7 +73,7 @@ $(zipcodefiles): %.csv: | $$(@D)
 	python3.5 scrape.py $(subst -, ,$(*D)) $(*F) > $@
 
 counts.csv:
-	@rm -rf $@
+	echo county,zipcode,count > $@
 	for f in $(basename $(zipcodefiles)); do \
 		python3.5 scrape.py --action count $${f/\// } >> $@; \
 	done;
