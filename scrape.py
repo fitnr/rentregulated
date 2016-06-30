@@ -21,6 +21,7 @@ def sleep():
 
 
 def dumb_params(soup):
+    '''Find these params in a blob of digusting aspx'''
     fields = '__VIEWSTATE', '__EVENTVALIDATION', '__VIEWSTATEGENERATOR', '__VIEWSTATEENCRYPTED'
     params = {f: soup.find(attrs={'name': f}).attrs['value'] for f in fields}
 
@@ -31,6 +32,7 @@ def dumb_params(soup):
 
 
 def construct_soup(text):
+    '''Hackily construct HTML from the joke pipe-delimited XHR'''
     fields = 'VIEWSTATE', 'EVENTVALIDATION', 'VIEWSTATEGENERATOR', 'VIEWSTATEENCRYPTED'
     vals = dict()
 
@@ -48,6 +50,7 @@ def construct_soup(text):
 
 
 def writerows(writer, soup):
+    '''Extract fields from "table.grid" in soup and write to writer.'''
     table = soup.find('table', attrs={'class': 'grid'})
 
     if table is None:
@@ -66,6 +69,7 @@ def writerows(writer, soup):
 
 
 def prepare(session):
+    '''Make initial page requests, establishing session.'''
     session.headers.update({
         'User-Agent': "Mozilla (scraper bike) Gecko Chrome Safari",
         'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8',
@@ -95,6 +99,7 @@ def prepare(session):
 
 
 def firstpage(session, county, zipcode):
+    '''Get the first page of results.'''
     basic = {
         'ctl00$ContentPlaceHolder1$countyListDropDown': county,
         'ctl00$ContentPlaceHolder1$zipCodesDropDown': zipcode,
@@ -124,8 +129,6 @@ def firstpage(session, county, zipcode):
     print('selecting county:', county, file=sys.stderr)
     request = session.post(ENDPOINT, data=county_params, headers=AJAX_HEAD)
 
-    sleep()
-
     # decode parameters out of nasty nonsense
     # easiest way is to make another soup object
     soup = construct_soup(request.text)
@@ -142,6 +145,7 @@ def firstpage(session, county, zipcode):
 
 
 def count(session, county, zipcode):
+    '''Extract the count of results in a ZIP code from the first results page.'''
     text = firstpage(session, county, zipcode)
 
     if re.search('0 results found', text):
@@ -155,6 +159,7 @@ def count(session, county, zipcode):
 
 
 def scrape(session, county, zipcode):
+    '''Iterate through results, saving them.'''
     next_params = {
         "ctl00$ContentPlaceHolder1$ScriptManager1": (
             "ctl00$ContentPlaceHolder1$gridUpdatePanel|"
@@ -180,12 +185,14 @@ def scrape(session, county, zipcode):
     soup = BeautifulSoup(text, LIB)
 
     writer = csv.writer(sys.stdout, lineterminator='\n')
-    writerows(writer, soup)
 
-    sleep()
+    # Write first page of results
+    writerows(writer, soup)
 
     # get further results for zip code
     next_button = re.search(r'value="Next"', text)
+
+    sleep()
 
     while next_button:
         next_params.update(dumb_params(soup))
@@ -210,7 +217,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('county', type=str)
     parser.add_argument('zipcode', type=str)
-    parser.add_argument('--action', default='scrape')
+    parser.add_argument('--action', default='scrape', choices=('scrape', 'count'))
 
     args = parser.parse_args()
 
