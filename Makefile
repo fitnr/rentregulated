@@ -60,17 +60,30 @@ COUNTIES = BRONX KINGS QUEENS NEWYORK RICHMOND \
 csv = $(addsuffix .csv,$(COUNTIES))
 zipcodefiles = $(foreach b,$(COUNTIES),$(foreach z,$($b),$b/$z.csv))
 
-rentregulatedbuildings.csv: $(csv)
+.PHONY: all check
+all: rentregulated.csv
+
+check: counts.csv rentregulated.db
+	sqlite3 -csv rentregulated.db '.import $< counts'
+	sqlite3 -header rentregulated.db 'WITH a as (\
+		SELECT county, zipcode, COUNT(*) actual FROM rentregulated GROUP BY zipcode \
+		) SELECT a.county, a.zipcode, b.count expected, a.actual \
+		FROM a LEFT JOIN counts b USING (zipcode) \
+		WHERE a.actual != CAST(b.count as INTEGER)'
+
+rentregulated.db: rentregulated.csv
+	sqlite3 -csv $@ '.import $< rentregulated'
+
+rentregulated.csv: $(csv)
 	echo buildingregistrationnumber,lastregistrationyear,address,zipcode,county,status,addtionaladdresses > $@
 	cat $^ >> $@
 
 .SECONDEXPANSION:
 $(csv): %.csv: $$(foreach z,$$($$*),$$*/$$z.csv)
-	grep --no-filename -v 'Displaying buildings' $^ | \
-		sed 's/\[Additional Addresses\]/1/g' > $@
+	sed 's/\[Additional Addresses\]/1/g' $^| uniq > $@
 
 $(zipcodefiles): %.csv: | $$(@D)
-	python3.5 scrape.py $(subst -, ,$(*D)) $(*F) > $@
+	python3.5 scrape.py $(*D) $(*F) > $@
 
 counts.csv:
 	echo county,zipcode,count > $@
