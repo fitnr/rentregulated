@@ -60,8 +60,26 @@ COUNTIES = BRONX KINGS QUEENS NEWYORK RICHMOND \
 csv = $(addsuffix .csv,$(COUNTIES))
 zipcodefiles = $(foreach b,$(COUNTIES),$(foreach z,$($b),$b/$z.csv))
 
-.PHONY: all check
+DATABASE = rentregulated
+HOST = localhost
+MYSQL = mysql $(DATABASE) -u $(USER) -p$(PASS) -h $(HOST)
+
+.PHONY: all check mysql
 all: rentregulated.csv
+
+mysql: rentregulated.csv
+	mysql -u $(USER) -p$(PASS) -h $(HOST) -e 'CREATE DATABASE IF NOT EXISTS rentregulated'
+	$(MYSQL) -e "CREATE TABLE register ( buildingregistrationnumber BIGINT, \
+		lastregistrationyear INTEGER, \
+		address VARCHAR(100), \
+		zipcode VARCHAR(6), \
+		county VARCHAR(11), \
+		status TEXT, \
+		addtionaladdresses BOOLEAN);"
+
+	$(MYSQL) --local-infile -e "LOAD DATA LOCAL INFILE '$<' INTO TABLE $(DATABASE).register \
+		FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED BY '\"' LINES TERMINATED BY '\n' \
+		IGNORE 1 LINES;"
 
 check: counts.csv rentregulated.db
 	sqlite3 -csv rentregulated.db '.import $< counts'

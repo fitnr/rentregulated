@@ -11,7 +11,20 @@ The publically accessible dataset includes registrations going back to 1984. The
 
 The vast majority of properties are in the five boroughs, with a few properties in Nassau, Rockland and Westchester counties.
 
+## Using the data
+
+The data is included as a [CSV file](rentregulated.csv). The accompanying `Makefile` can be used to create an SQLite database or load the data into a MySQL database:
+```
+make rentregulated.db
+make mysql USER=myusername PASS=mypassword HOST=localhost
+```
+
+The `Makefile` also includes a script to download a new copy of the data. Note that the DHCR website is very slow and buggy, and download isn't a smooth process. The script requires Python 3.5 and two common prerequisites. Run `pip3.5 -r requirements.txt` to install the prerequisites. Remove `rentregulated.csv` then run `make` to download the data. Running multiple processes is not recommended.
+
 ## Caveats
+
+Because of the afore-mentioned bugginess of the DCHR site, the data may not be complete. Pull requests with additions are welcome.
+
 * DCHR has provided [basic information](https://apps.hcr.ny.gov/buildingsearch/popup.aspx) about the fields in the data set, but details about their methodology are missing.
 * Some addresses are given as ranges ("6 TO 10 MAIN STREET").
 * Some properties have "additional addressses". The significance of these addresses is unexplained. This data is available on the DHCR site, but requires an additional step to scrape, so only the note that an additional address exists is included.
