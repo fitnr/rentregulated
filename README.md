@@ -23,6 +23,8 @@ make rentregulated.db
 make mysql USER=myusername PASS=mypassword HOST=localhost
 ```
 
+Additionally, `[rentregulated.json](rentregulated.json) is a GeoJSON file with geocoded addresses. A mix of Google, Mapbox and Mapzen geocoders were used.
+
 The `Makefile` also includes a script to download a new copy of the data. Note that the DHCR website is very slow and buggy, and download isn't a smooth process. The script requires Python 3.5 and two common prerequisites. Run `pip3.5 -r requirements.txt` to install the prerequisites. Remove `rentregulated.csv` then run `make` to download the data. Running multiple processes is not recommended.
 
 ## Caveats
